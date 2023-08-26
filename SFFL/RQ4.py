@@ -15,7 +15,7 @@ t_start = time.time()
 device = 'cuda'
 for project in project_list:
     for random_seed in random_seed_list:
-        filename = f"RQ4/Ours/{project}_{random_seed}.txt"
+        filename = f"RQ4/SFFL/{project}_{random_seed}.txt"
             
         if os.path.exists(filename):
             print(f"{filename} already exists, skipping...")
