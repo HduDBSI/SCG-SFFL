@@ -1,10 +1,7 @@
-# Investigating the impact of position embedding and semantic embedding.
-
 import os
 import time
 import subprocess
 import re
-# import matplotlib.pyplot as plt
 import statistics
 
 project_list = ['activemq', 'alluxio', 'binnavi', 'kafka', 'realm-java']
