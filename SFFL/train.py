@@ -106,9 +106,6 @@ else:
 
 mc_own_adj, mc_call_adj, fmc_own_adj = mc_own_adj.to(device), mc_call_adj.to(device), fmc_own_adj.to(device)
 
-
-
-
 t_train = time.time()
 print('Start training...\n')
 best_f1, this_time_best_f1 = 0, 0

@@ -1,5 +1,3 @@
-# Investigating the impact of position embedding and semantic embedding.
-
 import os
 import time
 import subprocess

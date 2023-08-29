@@ -1,5 +1,3 @@
-# Investigating the impact of training epochs and feature vector dimensions on the word2vec model.
-
 import os
 import time
 import subprocess

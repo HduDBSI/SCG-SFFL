@@ -24,6 +24,13 @@ def get_parser():
     parser.add_argument('--weight_decay', type=float, default=5e-4)
     parser.add_argument('--dropout', type=float, default=0.1)
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda', 'cuda:0', 'cuda:1', 'cuda:2', 'cuda:3'])
+    
+    # for pretrain and fine-tune
+    parser.add_argument('--pretrained_project', type=str, default='activemq', choices=['binnavi', 'activemq', 'kafka', 'alluxio', 'realm-java'])
+    parser.add_argument('--fine_tuned_project', type=str, default='alluxio', choices=['binnavi', 'activemq', 'kafka', 'alluxio', 'realm-java'])
+    parser.add_argument('--fine_tune_epochs', type=int, default=400)
+    parser.add_argument('--fine_tune_data', type=float, default=0.1, choices=[0, 0.01, 0.05, 0.1])
+
     return parser
 
 def split_dataset(labels: np.array, train_ratio=0.64, val_ratio=0.16, test_ratio=0.20, random_seed=42):
@@ -85,12 +92,15 @@ def split_dataset(labels: np.array, train_ratio=0.64, val_ratio=0.16, test_ratio
     print("=== The Results of Dataset Splitting ===")
     print("Train set - positive samples:", train_pos_num)
     print("Train set - negative samples:", train_neg_num)
+    print(train_indices)
     print()
     print("Validation set - positive samples:", val_pos_num)
     print("Validation set - negative samples:", val_neg_num)
+    print(val_indices)
     print()
     print("Test set - pos samples:", test_pos_num)
     print("Test set - neg samples:", test_neg_num)
+    print(test_indices)
     print()
 
     return train_indices, val_indices, test_indices

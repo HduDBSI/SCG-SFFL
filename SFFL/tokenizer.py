@@ -17,6 +17,7 @@ def main():
 
     t = time.time()
     projects = ['activemq', 'alluxio', 'binnavi','kafka', 'realm-java']
+    total_tokens = []
     for project in projects:
         class_df = pd.read_csv(f'data/{project}/classInfo.csv')
         method_df = pd.read_csv(f'data/{project}/methodInfo.csv')
@@ -38,11 +39,14 @@ def main():
         with open(f'data/{project}/method_tokens.pkl', 'wb') as f:
             pickle.dump(method_tokens.tolist(), f)
 
+        total_tokens = total_tokens + class_tokens.tolist() + method_tokens.tolist()
         # # Loading example
         # with open(f'data/{project}/class_tokens.pkl', 'rb') as f:
         #     tokens = pickle.load(f)
         #     print(tokens)
 
+    with open(f'data/total_tokens.pkl', 'wb') as f:
+        pickle.dump(total_tokens, f)
 
     print(time.time() - t)
 
