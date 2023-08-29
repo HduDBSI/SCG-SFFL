@@ -84,6 +84,6 @@ class GraphDecoder(nn.Module):
         # Linear transformation of node embeddings
         combine = F.linear(embeddings, self.weight)
         # Compute adjacency matrix using the combination of embeddings
-        adj = torch.sigmoid(torch.mm(combine, combine.transpose(-1, -2)))
+        adj = torch.sigmoid(torch.mm(combine, combine.t()))
 
         return adj

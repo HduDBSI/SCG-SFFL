@@ -33,8 +33,7 @@ def train():
 
     return f1
 
-# for test
-from refactor import refactor
+
 def test():
     encoder.eval()
     classifier.eval()
@@ -68,7 +67,7 @@ adj, features, labels = utils.load_data(args.project)
 feature_num = features.shape[1]
 
 # get train, validation, test data split
-idx_train, idx_val, idx_test = utils.split_dataset(labels, random_seed=args.random_seed)
+idx_train, idx_val, idx_test = utils.split_labels(labels, random_seed=args.random_seed)
 
 features = features.to(args.device)
 adj = adj.to(args.device)
