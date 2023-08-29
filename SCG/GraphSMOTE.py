@@ -27,6 +27,8 @@ def generate_synthetic_nodes(X:torch.Tensor, generate_num:int, k_neighbors=5):
 
     distances = torch.cdist(X, X)
 
+    if k_neighbors+1 > X.shape[0] - 1:
+        k_neighbors = X.shape[0] - 1
     _, idx = torch.topk(distances, k=k_neighbors+1, largest=False, dim=1, sorted=True)
     
     k_neighbors_idx = idx[:, 1:] # remove itself
@@ -73,41 +75,37 @@ def share_edges_with_synthetic_nodes(k_neighbors_idx, adj):
 
     return synthetic_nodes_adj
 
-# default category starts from 0 to n
+# default binary
 def GraphSMOTE(X:torch.Tensor, y:torch.Tensor, train_idx:np.array, adj:torch.Tensor, stragery=0):
     # stragery = 0 -> build balance dataset
     # stragery = k -> generate k times for imbalance samples
-    class_num = y.max().item() + 1
     train_X, train_y, train_adj = X[train_idx], y[train_idx], adj[train_idx]
-    avg_num = int(train_y.shape[0] / class_num)
 
+    class_ = 1  # imbalance class
     generate_adjs = []
-    for class_ in range(0, class_num):
-        class_node_num = (train_y == class_).sum().item()
-        
-        if class_node_num >= avg_num:
-            continue
-        
-        if stragery == 0:
-            _, count = most_frequent_integer(train_y)
-            generate_num = count - class_node_num
-        else:
-            generate_num = int(class_node_num * stragery)
 
-        class_train_idx = train_y == class_
-        class_train_X = train_X[class_train_idx]
-        class_train_adj = train_adj[class_train_idx, :]
+    class_node_num = (train_y == class_).sum().item()
+    
+    if stragery == 0:
+        _, count = most_frequent_integer(train_y)
+        generate_num = count - class_node_num
+    else:
+        generate_num = int(class_node_num * stragery)
 
-        generate_X, neighbors_idx = generate_synthetic_nodes(class_train_X, generate_num)
-        generate_y = torch.full((generate_num,), class_, dtype=torch.int, device=y.device)
+    class_train_idx = train_y == class_
+    class_train_X = train_X[class_train_idx]
+    class_train_adj = train_adj[class_train_idx, :]
 
-        generate_idx = np.arange(y.shape[0], y.shape[0]+generate_num)
-        generate_adj = share_edges_with_synthetic_nodes(neighbors_idx, class_train_adj)
+    generate_X, neighbors_idx = generate_synthetic_nodes(class_train_X, generate_num)
+    generate_y = torch.full((generate_num,), class_, dtype=torch.int, device=y.device)
 
-        X = torch.cat((X, generate_X), dim=0)
-        y = torch.cat((y, generate_y), dim=0)
-        train_idx = np.concatenate([train_idx, generate_idx])
-        generate_adjs.append(generate_adj)
+    generate_idx = np.arange(y.shape[0], y.shape[0]+generate_num)
+    generate_adj = share_edges_with_synthetic_nodes(neighbors_idx, class_train_adj)
+
+    X = torch.cat((X, generate_X), dim=0)
+    y = torch.cat((y, generate_y), dim=0)
+    train_idx = np.concatenate([train_idx, generate_idx])
+    generate_adjs.append(generate_adj)
     
     if generate_adjs:
         add_adj = torch.cat(generate_adjs, dim=0)
