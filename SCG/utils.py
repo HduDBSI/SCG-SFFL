@@ -10,7 +10,7 @@ def get_parser():
     parser.add_argument('--project', type=str, default='kafka', choices=['binnavi', 'activemq', 'kafka', 'alluxio', 'realm-java']) 
     parser.add_argument('--class_num', type=int, default=2) 
     parser.add_argument('--random_seed', type=int, default=0)
-    parser.add_argument('--epochs', type=int, default=2000)
+    parser.add_argument('--epochs', type=int, default=1000)
     parser.add_argument('--hidden_dim', type=int, default=64)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--weight_decay', type=float, default=5e-4)
@@ -19,6 +19,13 @@ def get_parser():
     parser.add_argument('--weight', type=float, default=1E-6)
     parser.add_argument('--repeat_time', type=int, default=1)
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda', 'cuda:0', 'cuda:1', 'cuda:2', 'cuda:3'])
+
+    # for pretrain and fine-tune
+    parser.add_argument('--pretrained_project', type=str, default='binnavi', choices=['binnavi', 'activemq', 'kafka', 'alluxio', 'realm-java'])
+    parser.add_argument('--fine_tuned_project', type=str, default='activemq', choices=['binnavi', 'activemq', 'kafka', 'alluxio', 'realm-java'])
+    parser.add_argument('--fine_tune_epochs', type=int, default=400)
+    parser.add_argument('--fine_tune_data', type=float, default=0.1, choices=[0, 0.01, 0.05, 0.1])
+    
 
     return parser
 
@@ -49,7 +56,7 @@ def load_data(project):
 
     return adj_symmetric, features, labels
 
-def split_dataset(labels: np.array, train_ratio=0.6, val_ratio=0.2, test_ratio=0.2, random_seed=42):
+def split_labels(labels: np.array, train_ratio=0.6, val_ratio=0.2, test_ratio=0.2, random_seed=42):
     # Ensure the sum of ratios equals 1
     assert train_ratio + val_ratio + test_ratio == 1
 
@@ -160,5 +167,3 @@ def adj_mse_loss(adj_rec, adj_tgt):
     loss = torch.sum(weight_matrix * (adj_rec - adj_tgt) ** 2)
 
     return loss
-
-
