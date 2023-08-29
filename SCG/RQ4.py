@@ -1,11 +1,7 @@
-# Investigating the impact of training epochs and feature vector dimensions on the word2vec model.
-
 import os
 import time
 import subprocess
 import re
-import matplotlib.pyplot as plt
-import numpy as np
 import statistics
 
 project_list = ['activemq', 'alluxio', 'binnavi', 'kafka', 'realm-java']
