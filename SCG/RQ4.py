@@ -47,27 +47,51 @@ def process_file(filename):
     start_index = content.find("Test set\n") + len("Test set\n")
     results = content[start_index:]
 
+    precision1 = extract_metrics(results, "Precision1")
+    recall1 = extract_metrics(results, "Recall1")
     f1_score1 = extract_metrics(results, "F1-Score1")
 
-    return f1_score1
+    return precision1, recall1, f1_score1
 
+precisions = {}
+recalls = {}
 f1_scores = {}
 
 for project in project_list:
+    precision1_list = []
+    recall1_list = []
     f1_score1_list = []
     for random_seed in random_seed_list:
         filename = f"RQ4/{project}_{random_seed}-noSMOTE.txt"
-        f1_score1 = process_file(filename)
+        precision1, recall1, f1_score1 = process_file(filename)
         
+        if precision1 is not None:
+            precision1_list.append(precision1)
+
+        if recall1 is not None:
+            recall1_list.append(recall1)
+
         if f1_score1 is not None:
             f1_score1_list.append(f1_score1)
 
+    precisions[project] = statistics.mean(precision1_list)
+    recalls[project] = statistics.mean(recall1_list)
     f1_scores[project] = statistics.mean(f1_score1_list)
 
     print(f"Test set results for {project}:")
 
+    print("Average Precision1: {:.2f}".format(precisions[project]))
+    print("Average Recall1: {:.2f}".format(recalls[project]))
     print("Average F1_score1: {:.2f}".format(f1_scores[project]))
     print()
 
+average_precision1 = statistics.mean([precisions[project] for project in project_list])
+average_recall1 = statistics.mean([recalls[project] for project in project_list])
+average_f1_score1 = statistics.mean([f1_scores[project] for project in project_list])
+
+print('Overall Average')
+print("Average Precision1: {:.2f}".format(average_precision1))
+print("Average Recall1: {:.2f}".format(average_recall1))
+print("Average F1_score1: {:.2f}".format(average_f1_score1))
 
 
