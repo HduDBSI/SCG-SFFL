@@ -19,7 +19,7 @@ def process_file(filename):
     start_index = content.find("Test set\n") + len("Test set\n")
     results = content[start_index:]
 
-    f1_score1 = extract_metrics(results, "F1-Score1")
+    f1_score1 = extract_metrics(results, "F1-Score2")
 
     return f1_score1
 
@@ -101,14 +101,18 @@ for fine_tuned_project in project_list:
         for pretrained_project in project_list:
             if pretrained_project == fine_tuned_project:
                 row.append('-')
-            elif f1_scores[(pretrained_project, fine_tuned_project, ftd)] == max_data:
-                row.append(
-                    '\\textbf{{{:.2f}}}'.format(f1_scores[(pretrained_project, fine_tuned_project, ftd)]) + '\%',
-                )
             else:
-                row.append(
-                    '{:.2f}'.format(f1_scores[(pretrained_project, fine_tuned_project, ftd)]) + '\%',
-                )
+                tmp = f1_scores[(pretrained_project, fine_tuned_project, ftd)]
+                if tmp == max_data and tmp != 0:
+                    if tmp >= 10:
+                        row.append('\\textbf{{{:.2f}}}'.format(tmp) + '\%')
+                    else:
+                        row.append('\\textbf{{\\enspace{:.2f}}}'.format(tmp) + '\%')
+                else:
+                    if tmp >= 10:
+                        row.append('{:.2f}'.format(tmp) + '\%')
+                    else:
+                        row.append('\\enspace{:.2f}'.format(tmp) + '\%')
         table_data.append(row)
 
 # Add average rows to table data
@@ -119,19 +123,22 @@ for ftd in fine_tune_data:
     else:
         row = ['', fine_tune_dic[ftd]]
     for pretrained_project in project_list:
-        if f1_scores[(pretrained_project, 'Average', ftd)] == max_data:
-            row.append(
-                '\\textbf{{{:.2f}}}'.format(f1_scores[(pretrained_project, 'Average', ftd)]) + '\%',
-            )
+        tmp = f1_scores[(pretrained_project, 'Average', ftd)]
+        if tmp == max_data and tmp != 0:
+            if tmp >= 10:
+                row.append('\\textbf{{{:.2f}}}'.format(tmp) + '\%')
+            else:
+                row.append('\\textbf{{\\enspace{:.2f}}}'.format(tmp) + '\%')
         else:
-            row.append(
-                '{:.2f}'.format(f1_scores[(pretrained_project, 'Average', ftd)]) + '\%',
-            )
+            if tmp >= 10:
+                row.append('{:.2f}'.format(tmp) + '\%')
+            else:
+                row.append('\\enspace{:.2f}'.format(tmp) + '\%')
     table_data.append(row)
 
 
 # 将表格数据转换为LaTeX表格
 latex_table = tabulate(table_data, headers, tablefmt='latex')
-latex_table = latex_table.replace('\\textbackslash{}', '').replace('\\}', '}').replace('\\{', '{').replace('text', '\\text').replace('\\$', '$').replace('\\_','_').replace('multirow', '\\multirow')
+latex_table = latex_table.replace('\\textbackslash{}', '').replace('\\}', '}').replace('\\{', '{').replace('text', '\\text').replace('\\$', '$').replace('\\_','_').replace('multirow', '\\multirow').replace('enspace', '\\enspace')
 # 打印LaTeX表格
 print(latex_table)

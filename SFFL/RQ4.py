@@ -55,7 +55,8 @@ def process_file(filename):
     recall2 = extract_metrics(results, "Recall2")
     f1_score2 = extract_metrics(results, "F1-Score2")
 
-    return precision1, recall1, f1_score1, precision2, recall2, f1_score2
+    acc_liu = recall2 / recall1 * 100
+    return precision1, recall1, f1_score1, precision2, recall2, f1_score2, acc_liu
 
 
 
@@ -63,18 +64,19 @@ def calculate_metrics(folder, project_list, random_seed_list):
     precisions = {}
     recalls = {}
     f1_scores = {}
-
+    accs = {}
     for project in project_list:
         precision1_list = []
         recall1_list = []
         f1_score1_list = []
+        acc_list = []
         precision2_list = []
         recall2_list = []
         f1_score2_list = []
         
         for random_seed in random_seed_list:
             filename = f"RQ4/{folder}/{project}_{random_seed}.txt"
-            precision1, recall1, f1_score1, precision2, recall2, f1_score2 = process_file(filename)
+            precision1, recall1, f1_score1, precision2, recall2, f1_score2, acc_liu = process_file(filename)
 
             if precision1 is not None:
                 precision1_list.append(precision1)
@@ -93,10 +95,15 @@ def calculate_metrics(folder, project_list, random_seed_list):
 
             if f1_score2 is not None:
                 f1_score2_list.append(f1_score2)
+            
+            if acc_liu is not None:
+                acc_list.append(acc_liu)
 
         precisions[(project, '1')] = statistics.mean(precision1_list)
         recalls[(project, '1')] = statistics.mean(recall1_list)
         f1_scores[(project, '1')] = statistics.mean(f1_score1_list)
+
+        accs[project] = statistics.mean(acc_list)
 
         precisions[(project, '2')] = statistics.mean(precision2_list)
         recalls[(project, '2')] = statistics.mean(recall2_list)
@@ -107,15 +114,17 @@ def calculate_metrics(folder, project_list, random_seed_list):
         print("Average Recall1: {:.2f}".format(recalls[(project, '1')]))
         print("Average F1_score1: {:.2f}".format(f1_scores[(project, '1')]))
 
+        print("Average ACC_liu: {:.2f}".format(accs[project]))
+
         print("Average Precision2: {:.2f}".format(precisions[(project, '2')]))
         print("Average Recall2: {:.2f}".format(recalls[(project, '2')]))
         print("Average F1_score2: {:.2f}".format(f1_scores[(project, '2')]))
         print()
 
-    return precisions, recalls, f1_scores
+    return precisions, recalls, f1_scores, accs
 
-SFFL_precisions, SFFL_recalls, SFFL_f1_scores = calculate_metrics('SCG', project_list, random_seed_list)
-SCG_precisions, SCG_recalls, SCG_f1_scores = calculate_metrics('SFFL', project_list, random_seed_list)
+SCG_precisions, SCG_recalls, SCG_f1_scores, SCG_accs = calculate_metrics('SCG', project_list, random_seed_list)
+SFFL_precisions, SFFL_recalls, SFFL_f1_scores, SFFL_accs = calculate_metrics('SFFL', project_list, random_seed_list)
 
 from tabulate import tabulate
 
@@ -133,15 +142,15 @@ table_data = []
 project_dic = {'binnavi': 'BinNavi', 'activemq': 'ActiveMQ', 'kafka': 'Kafka', 'alluxio': 'Alluxio', 'realm-java': 'Realm-java'}
 for project in project_list:
     
-    SFFL_precision1, SFFL_recall1, SFFL_f1_score1 = SFFL_precisions[(project, '1')], SFFL_recalls[(project, '1')], SFFL_f1_scores[(project, '1')]
-    SFFL_precision2, SFFL_recall2, SFFL_f1_score2 = SFFL_precisions[(project, '2')], SFFL_recalls[(project, '2')], SFFL_f1_scores[(project, '2')]
-
     SCG_precision1, SCG_recall1, SCG_f1_score1 = SCG_precisions[(project, '1')], SCG_recalls[(project, '1')], SCG_f1_scores[(project, '1')]
     SCG_precision2, SCG_recall2, SCG_f1_score2 = SCG_precisions[(project, '2')], SCG_recalls[(project, '2')], SCG_f1_scores[(project, '2')]
 
-    SFFL_acc = SFFL_precision2 / SFFL_precision1 * 100
-    SCG_acc = SCG_precision2 / SCG_precision1 * 100
+    SFFL_precision1, SFFL_recall1, SFFL_f1_score1 = SFFL_precisions[(project, '1')], SFFL_recalls[(project, '1')], SFFL_f1_scores[(project, '1')]
+    SFFL_precision2, SFFL_recall2, SFFL_f1_score2 = SFFL_precisions[(project, '2')], SFFL_recalls[(project, '2')], SFFL_f1_scores[(project, '2')]
 
+    SCG_acc = SCG_accs[project]
+    SFFL_acc = SFFL_accs[project]
+    
     max_precision1 = max(SFFL_precision1, SCG_precision1)
     max_recall1 = max(SFFL_recall1, SCG_recall1)
     max_f1_score1 = max(SFFL_f1_score1, SCG_f1_score1)
@@ -154,18 +163,6 @@ for project in project_list:
 
     table_data.append([
         r'\multirow{2}{*}{' + project_dic[project] + r'}',
-        r'SFFL',
-        r'\textbf{' + '{:.2f}'.format(SFFL_precision1) + r'\%}' if SFFL_precision1 == max_precision1 else '{:.2f}'.format(SFFL_precision1) + r'\%',
-        r'\textbf{' + '{:.2f}'.format(SFFL_recall1) + r'\%}' if SFFL_recall1 == max_recall1 else '{:.2f}'.format(SFFL_recall1) + r'\%',
-        r'\textbf{' + '{:.2f}'.format(SFFL_f1_score1) + r'\%}' if SFFL_f1_score1 == max_f1_score1 else '{:.2f}'.format(SFFL_f1_score1) + r'\%',
-        r'\textbf{' + '{:.2f}'.format(SFFL_acc) + r'\%}' if SFFL_acc == max_acc else '{:.2f}'.format(SFFL_acc) + r'\%',
-        r'\textbf{' + '{:.2f}'.format(SFFL_precision2) + r'\%}' if SFFL_precision2 == max_precision2 else '{:.2f}'.format(SFFL_precision2) + r'\%',
-        r'\textbf{' + '{:.2f}'.format(SFFL_recall2) + r'\%}' if SFFL_recall2 == max_recall2 else '{:.2f}'.format(SFFL_recall2) + r'\%',
-        r'\textbf{' + '{:.2f}'.format(SFFL_f1_score2) + r'\%}' if SFFL_f1_score2 == max_f1_score2 else '{:.2f}'.format(SFFL_f1_score2) + r'\%',
-    ])
-
-    table_data.append([
-        r' ',
         r'SCG',
         r'\textbf{' + '{:.2f}'.format(SCG_precision1) + r'\%}' if SCG_precision1 == max_precision1 else '{:.2f}'.format(SCG_precision1) + r'\%',
         r'\textbf{' + '{:.2f}'.format(SCG_recall1) + r'\%}' if SCG_recall1 == max_recall1 else '{:.2f}'.format(SCG_recall1) + r'\%',
@@ -176,21 +173,33 @@ for project in project_list:
         r'\textbf{' + '{:.2f}'.format(SCG_f1_score2) + r'\%}' if SCG_f1_score2 == max_f1_score2 else '{:.2f}'.format(SCG_f1_score2) + r'\%',
     ])
 
-SFFL_average_precision1 = statistics.mean([SFFL_precisions[(project, '1')] for project in project_list])
-SFFL_average_recall1 = statistics.mean([SFFL_recalls[(project, '1')] for project in project_list])
-SFFL_average_f1_score1 = statistics.mean([SFFL_f1_scores[(project, '1')] for project in project_list])
-SFFL_average_acc = statistics.mean([SFFL_precisions[(project, '2')] / SFFL_precisions[(project, '1')] * 100 for project in project_list])
-SFFL_average_precision2 = statistics.mean([SFFL_precisions[(project, '2')] for project in project_list])
-SFFL_average_recall2 = statistics.mean([SFFL_recalls[(project, '2')] for project in project_list])
-SFFL_average_f1_score2 = statistics.mean([SFFL_f1_scores[(project, '2')] for project in project_list])
+    table_data.append([
+        r' ',
+        r'SFFL',
+        r'\textbf{' + '{:.2f}'.format(SFFL_precision1) + r'\%}' if SFFL_precision1 == max_precision1 else '{:.2f}'.format(SFFL_precision1) + r'\%',
+        r'\textbf{' + '{:.2f}'.format(SFFL_recall1) + r'\%}' if SFFL_recall1 == max_recall1 else '{:.2f}'.format(SFFL_recall1) + r'\%',
+        r'\textbf{' + '{:.2f}'.format(SFFL_f1_score1) + r'\%}' if SFFL_f1_score1 == max_f1_score1 else '{:.2f}'.format(SFFL_f1_score1) + r'\%',
+        r'\textbf{' + '{:.2f}'.format(SFFL_acc) + r'\%}' if SFFL_acc == max_acc else '{:.2f}'.format(SFFL_acc) + r'\%',
+        r'\textbf{' + '{:.2f}'.format(SFFL_precision2) + r'\%}' if SFFL_precision2 == max_precision2 else '{:.2f}'.format(SFFL_precision2) + r'\%',
+        r'\textbf{' + '{:.2f}'.format(SFFL_recall2) + r'\%}' if SFFL_recall2 == max_recall2 else '{:.2f}'.format(SFFL_recall2) + r'\%',
+        r'\textbf{' + '{:.2f}'.format(SFFL_f1_score2) + r'\%}' if SFFL_f1_score2 == max_f1_score2 else '{:.2f}'.format(SFFL_f1_score2) + r'\%',
+    ])
 
 SCG_average_precision1 = statistics.mean([SCG_precisions[(project, '1')] for project in project_list])
 SCG_average_recall1 = statistics.mean([SCG_recalls[(project, '1')] for project in project_list])
 SCG_average_f1_score1 = statistics.mean([SCG_f1_scores[(project, '1')] for project in project_list])
-SCG_average_acc = statistics.mean([SCG_precisions[(project, '2')] / SCG_precisions[(project, '1')] * 100 for project in project_list])
+SCG_average_acc = statistics.mean([SCG_accs[project] for project in project_list])
 SCG_average_precision2 = statistics.mean([SCG_precisions[(project, '2')] for project in project_list])
 SCG_average_recall2 = statistics.mean([SCG_recalls[(project, '2')] for project in project_list])
 SCG_average_f1_score2 = statistics.mean([SCG_f1_scores[(project, '2')] for project in project_list])
+
+SFFL_average_precision1 = statistics.mean([SFFL_precisions[(project, '1')] for project in project_list])
+SFFL_average_recall1 = statistics.mean([SFFL_recalls[(project, '1')] for project in project_list])
+SFFL_average_f1_score1 = statistics.mean([SFFL_f1_scores[(project, '1')] for project in project_list])
+SFFL_average_acc = statistics.mean([SFFL_accs[project] for project in project_list])
+SFFL_average_precision2 = statistics.mean([SFFL_precisions[(project, '2')] for project in project_list])
+SFFL_average_recall2 = statistics.mean([SFFL_recalls[(project, '2')] for project in project_list])
+SFFL_average_f1_score2 = statistics.mean([SFFL_f1_scores[(project, '2')] for project in project_list])
 
 max_avg_precision1 = max(SFFL_average_precision1, SCG_average_precision1)
 max_avg_recall1 = max(SFFL_average_recall1, SCG_average_recall1)
@@ -201,8 +210,21 @@ max_avg_recall2 = max(SFFL_average_recall2, SCG_average_recall2)
 max_avg_f1_score2 = max(SFFL_average_f1_score2, SCG_average_f1_score2)
 
 # Add average row to table data
+
 table_data.append([
     r'\multirow{2}{*}{\textbf{Average}}',
+    r'SCG',
+    r'\textbf{' + '{:.2f}'.format(SCG_average_precision1) + r'\%}' if SCG_average_precision1 == max_avg_precision1 else '{:.2f}'.format(SCG_average_precision1) + r'\%',
+    r'\textbf{' + '{:.2f}'.format(SCG_average_recall1) + r'\%}' if SCG_average_recall1 == max_avg_recall1 else '{:.2f}'.format(SCG_average_recall1) + r'\%',
+    r'\textbf{' + '{:.2f}'.format(SCG_average_f1_score1) + r'\%}' if SCG_average_f1_score1 == max_avg_f1_score1 else '{:.2f}'.format(SCG_average_f1_score1) + r'\%',
+    r'\textbf{' + '{:.2f}'.format(SCG_average_acc) + r'\%}' if SCG_average_acc == max_avg_acc else '{:.2f}'.format(SCG_average_acc) + r'\%',
+    r'\textbf{' + '{:.2f}'.format(SCG_average_precision2) + r'\%}' if SCG_average_precision2 == max_avg_precision2 else '{:.2f}'.format(SCG_average_precision2) + r'\%',
+    r'\textbf{' + '{:.2f}'.format(SCG_average_recall2) + r'\%}' if SCG_average_recall2 == max_avg_recall2 else '{:.2f}'.format(SCG_average_recall2) + r'\%',
+    r'\textbf{' + '{:.2f}'.format(SCG_average_f1_score2) + r'\%}' if SCG_average_f1_score2 == max_avg_f1_score2 else '{:.2f}'.format(SCG_average_f1_score2) + r'\%',
+])
+
+table_data.append([
+    r' ',
     r'SFFL',
     r'\textbf{' + '{:.2f}'.format(SFFL_average_precision1) + r'\%}' if SFFL_average_precision1 == max_avg_precision1 else '{:.2f}'.format(SFFL_average_precision1) + r'\%',
     r'\textbf{' + '{:.2f}'.format(SFFL_average_recall1) + r'\%}' if SFFL_average_recall1 == max_avg_recall1 else '{:.2f}'.format(SFFL_average_recall1) + r'\%',
@@ -213,17 +235,6 @@ table_data.append([
     r'\textbf{' + '{:.2f}'.format(SFFL_average_f1_score2) + r'\%}' if SFFL_average_f1_score2 == max_avg_f1_score2 else '{:.2f}'.format(SFFL_average_f1_score2) + r'\%',
 ])
 
-table_data.append([
-    r' ',
-    r'SCG',
-    r'\textbf{' + '{:.2f}'.format(SCG_average_precision1) + r'\%}' if SCG_average_precision1 == max_avg_precision1 else '{:.2f}'.format(SCG_average_precision1) + r'\%',
-    r'\textbf{' + '{:.2f}'.format(SCG_average_recall1) + r'\%}' if SCG_average_recall1 == max_avg_recall1 else '{:.2f}'.format(SCG_average_recall1) + r'\%',
-    r'\textbf{' + '{:.2f}'.format(SCG_average_f1_score1) + r'\%}' if SCG_average_f1_score1 == max_avg_f1_score1 else '{:.2f}'.format(SCG_average_f1_score1) + r'\%',
-    r'\textbf{' + '{:.2f}'.format(SCG_average_acc) + r'\%}' if SCG_average_acc == max_avg_acc else '{:.2f}'.format(SCG_average_acc) + r'\%',
-    r'\textbf{' + '{:.2f}'.format(SCG_average_precision2) + r'\%}' if SCG_average_precision2 == max_avg_precision2 else '{:.2f}'.format(SCG_average_precision2) + r'\%',
-    r'\textbf{' + '{:.2f}'.format(SCG_average_recall2) + r'\%}' if SCG_average_recall2 == max_avg_recall2 else '{:.2f}'.format(SCG_average_recall2) + r'\%',
-    r'\textbf{' + '{:.2f}'.format(SCG_average_f1_score2) + r'\%}' if SCG_average_f1_score2 == max_avg_f1_score2 else '{:.2f}'.format(SCG_average_f1_score2) + r'\%',
-])
 
 # 将表格数据转换为LaTeX表格
 latex_table = tabulate(table_data, headers, tablefmt='latex')
